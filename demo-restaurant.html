@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THE TABLE — Restaurant Demo</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@200;300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0F0805;
+  --warm1:#1A0E08;
+  --warm2:#2A1810;
+  --burgundy:#6B1A1A;
+  --terracotta:#C4572A;
+  --amber:#D4820A;
+  --cream:#F5EDD8;
+  --cream2:#EBD9B8;
+  --white:#FFFFFF;
+  --w90:rgba(245,237,216,0.90);
+  --w60:rgba(245,237,216,0.60);
+  --w35:rgba(245,237,216,0.35);
+  --w15:rgba(245,237,216,0.15);
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--cream);overflow-x:hidden}
+
+/* HERO BG — full bleed food photo */
+.hero-bg{
+  position:fixed;inset:0;z-index:0;
+  pointer-events:none;
+}
+.hero-bg-img{
+  position:absolute;inset:0;
+  background-size:cover;background-position:center;
+  opacity:0;transition:opacity 3s ease;
+}
+.hero-bg-img.active{opacity:1}
+/* Warm vignette overlay */
+.hero-bg-overlay{
+  position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:
+    radial-gradient(ellipse 100% 100% at 50% 50%, transparent 20%, rgba(15,8,5,0.55) 100%),
+    linear-gradient(to bottom, rgba(15,8,5,0.5) 0%, rgba(15,8,5,0.05) 30%, rgba(15,8,5,0.05) 60%, rgba(15,8,5,0.85) 100%);
+}
+
+/* NAV */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:300;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:28px 56px;
+  transition:all 0.5s ease;
+}
+nav.solid{
+  background:rgba(15,8,5,0.96);
+  backdrop-filter:blur(20px);
+  padding:14px 56px;
+  border-bottom:1px solid rgba(196,87,42,0.12);
+}
+.nav-logo{
+  font-family:'Lora',serif;
+  font-size:1.5rem;font-weight:700;
+  color:var(--cream);letter-spacing:0.08em;
+}
+.nav-logo span{color:var(--terracotta)}
+.nav-center{
+  display:flex;gap:36px;list-style:none;
+  position:absolute;left:50%;transform:translateX(-50%);
+}
+.nav-center a{
+  color:var(--w35);text-decoration:none;
+  font-size:0.65rem;letter-spacing:0.2em;
+  text-transform:uppercase;font-weight:300;
+  transition:color 0.3s;
+}
+.nav-center a:hover{color:var(--cream)}
+.nav-right{display:flex;align-items:center;gap:20px}
+.nav-hours{font-size:0.6rem;color:var(--w35);letter-spacing:0.1em;font-weight:300}
+.nav-order{
+  background:var(--terracotta);color:var(--white);
+  font-size:0.6rem;font-weight:500;letter-spacing:0.15em;
+  text-transform:uppercase;padding:10px 22px;
+  text-decoration:none;border-radius:2px;
+  transition:background 0.3s;
+}
+.nav-order:hover{background:#D4682A}
+
+/* SCROLL WRAP */
+.scroll-wrap{position:relative;z-index:2;pointer-events:none}
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.hero{
+  min-height:100vh;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  text-align:center;
+  padding:120px 24px 80px;
+  position:relative;
+}
+.hero-flag{
+  display:flex;align-items:center;gap:16px;
+  margin-bottom:28px;
+  opacity:0;animation:fade-in 1s 0.4s ease forwards;
+}
+.flag-line{width:40px;height:1px;background:rgba(196,87,42,0.5)}
+.flag-text{
+  font-size:0.58rem;letter-spacing:0.45em;
+  text-transform:uppercase;color:var(--terracotta);
+  font-weight:400;
+}
+.hero-title{
+  font-family:'Lora',serif;
+  font-size:clamp(3.5rem,9vw,8.5rem);
+  font-weight:700;line-height:0.9;
+  letter-spacing:-0.01em;
+  color:var(--cream);
+  margin-bottom:12px;
+  opacity:0;animation:fade-in 1.2s 0.6s ease forwards;
+}
+.hero-title em{
+  font-style:italic;font-weight:400;
+  color:var(--cream2);display:block;
+  font-size:0.55em;letter-spacing:0.06em;
+  margin-top:8px;
+}
+.hero-tagline{
+  font-size:0.88rem;color:var(--w60);
+  line-height:1.8;font-weight:300;
+  max-width:440px;margin:24px auto 0;
+  opacity:0;animation:fade-in 1s 0.9s ease forwards;
+}
+.hero-ctas{
+  margin-top:44px;
+  display:flex;gap:14px;flex-wrap:wrap;justify-content:center;
+  opacity:0;animation:fade-in 1s 1.1s ease forwards;
+  pointer-events:all;
+}
+.cta-primary{
+  background:var(--terracotta);color:var(--white);
+  padding:15px 44px;font-weight:500;font-size:0.72rem;
+  letter-spacing:0.18em;text-transform:uppercase;
+  text-decoration:none;border-radius:2px;
+  transition:background 0.3s,transform 0.2s;display:inline-block;
+}
+.cta-primary:hover{background:#D4682A;transform:translateY(-2px)}
+.cta-secondary{
+  border:1px solid rgba(245,237,216,0.2);
+  color:var(--w60);padding:15px 44px;font-weight:300;
+  font-size:0.72rem;letter-spacing:0.18em;text-transform:uppercase;
+  text-decoration:none;border-radius:2px;
+  transition:all 0.3s;display:inline-block;
+}
+.cta-secondary:hover{border-color:var(--cream);color:var(--cream);transform:translateY(-2px)}
+
+/* HERO INFO BAR */
+.hero-info{
+  position:absolute;bottom:0;left:0;right:0;
+  display:grid;grid-template-columns:repeat(3,1fr);
+  background:rgba(15,8,5,0.75);
+  backdrop-filter:blur(16px);
+  border-top:1px solid rgba(196,87,42,0.12);
+  pointer-events:all;
+  opacity:0;animation:fade-in 1s 1.4s ease forwards;
+}
+.info-item{
+  padding:24px 32px;
+  border-right:1px solid rgba(196,87,42,0.08);
+  text-align:center;
+}
+.info-item:last-child{border-right:none}
+.info-label{
+  font-size:0.55rem;letter-spacing:0.3em;text-transform:uppercase;
+  color:var(--terracotta);font-weight:400;margin-bottom:8px;
+}
+.info-value{
+  font-family:'Lora',serif;font-size:1rem;
+  color:var(--cream);font-weight:400;letter-spacing:0.03em;
+}
+
+@keyframes fade-in{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* ============================================================
+   ABOUT STRIP
+   ============================================================ */
+.about-strip{
+  position:relative;z-index:2;
+  background:var(--warm1);
+  border-top:1px solid rgba(196,87,42,0.08);
+  border-bottom:1px solid rgba(196,87,42,0.08);
+  padding:80px 56px;
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:64px;align-items:center;
+  pointer-events:none;
+}
+.strip-left{}
+.strip-eyebrow{
+  font-size:0.58rem;letter-spacing:0.4em;text-transform:uppercase;
+  color:var(--terracotta);font-weight:400;margin-bottom:16px;
+}
+.strip-title{
+  font-family:'Lora',serif;
+  font-size:clamp(1.8rem,3vw,3rem);
+  font-weight:700;line-height:1.15;
+  color:var(--cream);margin-bottom:20px;
+}
+.strip-title em{font-style:italic;color:var(--cream2);font-weight:400}
+.strip-body{
+  font-size:0.85rem;color:var(--w60);
+  line-height:1.95;font-weight:300;
+}
+.strip-right{
+  display:grid;grid-template-columns:1fr 1fr;gap:20px;
+}
+.strip-stat{
+  background:rgba(196,87,42,0.06);
+  border:1px solid rgba(196,87,42,0.1);
+  padding:28px 20px;text-align:center;
+  border-radius:4px;
+  transition:background 0.3s;
+}
+.strip-stat:hover{background:rgba(196,87,42,0.1)}
+.ss-num{
+  font-family:'Lora',serif;font-size:2.2rem;
+  font-weight:700;color:var(--terracotta);
+  margin-bottom:6px;line-height:1;
+}
+.ss-label{
+  font-size:0.6rem;letter-spacing:0.15em;
+  text-transform:uppercase;color:var(--w35);font-weight:300;
+}
+
+/* ============================================================
+   MENU SECTION
+   ============================================================ */
+.menu-section{
+  position:relative;z-index:2;
+  background:var(--bg);
+  padding:100px 56px;
+}
+.menu-header{text-align:center;margin-bottom:64px}
+.menu-eyebrow{font-size:0.58rem;letter-spacing:0.4em;text-transform:uppercase;color:var(--terracotta);font-weight:400;margin-bottom:14px}
+.menu-title{font-family:'Lora',serif;font-size:clamp(2rem,4vw,3.5rem);font-weight:700;color:var(--cream);margin-bottom:16px}
+.menu-title em{font-style:italic;font-weight:400;color:var(--cream2)}
+.menu-sub{font-size:0.82rem;color:var(--w35);max-width:480px;margin:0 auto;line-height:1.9;font-weight:300}
+
+.menu-tabs{
+  display:flex;justify-content:center;gap:4px;
+  margin-bottom:48px;flex-wrap:wrap;
+  pointer-events:all;
+}
+.menu-tab{
+  font-size:0.62rem;letter-spacing:0.18em;text-transform:uppercase;
+  color:var(--w35);padding:10px 24px;cursor:pointer;
+  border:1px solid transparent;border-radius:2px;
+  transition:all 0.3s;font-weight:300;
+}
+.menu-tab.active,.menu-tab:hover{
+  color:var(--cream);
+  border-color:rgba(196,87,42,0.3);
+  background:rgba(196,87,42,0.06);
+}
+
+.menu-items{
+  display:flex;flex-direction:column;
+  max-width:760px;margin:0 auto;
+  pointer-events:all;
+}
+.menu-item{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  gap:24px;padding:24px 0;
+  border-bottom:1px solid rgba(245,237,216,0.06);
+}
+.menu-item:last-child{border-bottom:none}
+.mi-info{flex:1}
+.mi-name{
+  font-family:'Lora',serif;font-size:1.05rem;
+  font-weight:600;color:var(--cream);
+  margin-bottom:6px;letter-spacing:0.02em;
+}
+.mi-desc{font-size:0.75rem;color:var(--w35);line-height:1.7;font-weight:300}
+.mi-tags{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.mi-tag{
+  font-size:0.52rem;letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--terracotta);border:1px solid rgba(196,87,42,0.2);
+  padding:3px 8px;border-radius:2px;font-weight:400;
+}
+.mi-price{
+  font-family:'Lora',serif;font-size:1.1rem;
+  font-weight:600;color:var(--amber);
+  white-space:nowrap;flex-shrink:0;
+  margin-top:2px;
+}
+
+/* ============================================================
+   EXPERIENCE CARDS
+   ============================================================ */
+.exp-section{
+  position:relative;z-index:2;
+  background:var(--warm1);
+  padding:100px 56px;
+}
+.exp-header{text-align:center;margin-bottom:56px}
+.exp-eyebrow{font-size:0.58rem;letter-spacing:0.4em;text-transform:uppercase;color:var(--terracotta);font-weight:400;margin-bottom:14px}
+.exp-title{font-family:'Lora',serif;font-size:clamp(1.8rem,3vw,3rem);font-weight:700;color:var(--cream)}
+.exp-title em{font-style:italic;font-weight:400;color:var(--cream2)}
+
+.exp-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:20px;pointer-events:all;
+}
+.exp-card{
+  background:rgba(196,87,42,0.04);
+  border:1px solid rgba(196,87,42,0.08);
+  padding:36px 28px;border-radius:4px;
+  transition:all 0.3s;
+  opacity:0;transform:translateY(24px);
+  transition:opacity 0.7s ease,transform 0.7s ease,background 0.3s,border-color 0.3s;
+}
+.exp-card.show{opacity:1;transform:translateY(0)}
+.exp-card:hover{background:rgba(196,87,42,0.08);border-color:rgba(196,87,42,0.2)}
+.exp-icon{font-size:2rem;margin-bottom:16px;display:block}
+.exp-name{font-family:'Lora',serif;font-size:1.1rem;font-weight:600;color:var(--cream);margin-bottom:10px}
+.exp-desc{font-size:0.78rem;color:var(--w35);line-height:1.8;font-weight:300}
+
+/* ============================================================
+   RESERVATION
+   ============================================================ */
+.res-section{
+  position:relative;z-index:2;
+  background:var(--bg);
+  padding:100px 56px;
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:80px;align-items:start;
+}
+.res-left{}
+.res-eyebrow{font-size:0.58rem;letter-spacing:0.4em;text-transform:uppercase;color:var(--terracotta);font-weight:400;margin-bottom:16px}
+.res-title{font-family:'Lora',serif;font-size:clamp(1.8rem,3vw,3rem);font-weight:700;color:var(--cream);margin-bottom:20px;line-height:1.2}
+.res-title em{font-style:italic;font-weight:400;color:var(--cream2)}
+.res-body{font-size:0.82rem;color:var(--w35);line-height:1.95;font-weight:300;margin-bottom:36px}
+.res-contact{display:flex;flex-direction:column;gap:14px}
+.rc-item{display:flex;align-items:center;gap:12px;font-size:0.78rem;color:var(--w60);font-weight:300}
+.rc-dot{width:5px;height:5px;border-radius:50%;background:var(--terracotta);flex-shrink:0}
+
+.res-right{pointer-events:all}
+.res-form{
+  background:var(--warm1);
+  border:1px solid rgba(196,87,42,0.1);
+  border-radius:4px;padding:44px 36px;
+  position:relative;overflow:hidden;
+}
+.res-form::before{
+  content:'';position:absolute;
+  top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--burgundy),var(--terracotta),var(--amber));
+}
+.ifield{margin-bottom:20px}
+.ifield label{display:block;font-size:0.55rem;font-weight:400;letter-spacing:0.22em;text-transform:uppercase;color:var(--terracotta);margin-bottom:9px}
+.ifield input,.ifield select,.ifield textarea{
+  width:100%;padding:13px 16px;
+  background:rgba(245,237,216,0.04);
+  border:1px solid rgba(245,237,216,0.08);
+  border-radius:3px;font-family:'Inter',sans-serif;
+  font-size:0.88rem;color:var(--cream);
+  outline:none;transition:border-color 0.25s;-webkit-appearance:none;
+}
+.ifield input::placeholder,.ifield textarea::placeholder{color:var(--w15);font-style:italic}
+.ifield input:focus,.ifield select:focus,.ifield textarea:focus{border-color:rgba(196,87,42,0.4)}
+.ifield select option{background:var(--warm1);color:var(--cream)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.res-btn{
+  width:100%;padding:16px;margin-top:8px;
+  background:var(--terracotta);color:var(--white);
+  border:none;border-radius:3px;
+  font-family:'Inter',sans-serif;font-size:0.72rem;
+  font-weight:500;letter-spacing:0.2em;text-transform:uppercase;
+  cursor:pointer;transition:background 0.3s,transform 0.2s;
+}
+.res-btn:hover{background:#D4682A;transform:translateY(-2px)}
+.res-note{font-size:0.65rem;color:var(--w15);margin-top:12px;text-align:center;font-style:italic}
+
+/* FOOTER */
+footer{
+  position:relative;z-index:2;
+  background:rgba(0,0,0,0.8);
+  border-top:1px solid rgba(196,87,42,0.08);
+  padding:48px 56px;pointer-events:all;
+}
+.footer-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:24px;padding-bottom:28px;border-bottom:1px solid rgba(245,237,216,0.05);margin-bottom:20px}
+.footer-logo{font-family:'Lora',serif;font-size:1.5rem;font-weight:700;color:var(--cream);letter-spacing:0.08em}
+.footer-logo span{color:var(--terracotta)}
+.footer-links{display:flex;gap:28px}
+.footer-links a{color:var(--w35);text-decoration:none;font-size:0.6rem;letter-spacing:0.18em;text-transform:uppercase;transition:color 0.3s;font-weight:300}
+.footer-links a:hover{color:var(--cream)}
+.footer-bottom{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.footer-copy{font-size:0.58rem;color:rgba(245,237,216,0.1);letter-spacing:0.08em}
+.footer-tagline{font-family:'Lora',serif;font-size:0.75rem;font-style:italic;color:rgba(196,87,42,0.3)}
+
+.reveal{opacity:0;transform:translateY(36px);transition:opacity 0.9s ease,transform 0.9s ease}
+.reveal.show{opacity:1;transform:translateY(0)}
+.reveal-left{opacity:0;transform:translateX(-36px);transition:opacity 0.9s ease,transform 0.9s ease}
+.reveal-left.show{opacity:1;transform:translateX(0)}
+.reveal-right{opacity:0;transform:translateX(36px);transition:opacity 0.9s ease,transform 0.9s ease}
+.reveal-right.show{opacity:1;transform:translateX(0)}
+
+@media(max-width:900px){
+  nav{padding:14px 20px}
+  nav.solid{padding:10px 20px}
+  .nav-center,.nav-hours{display:none}
+  .hero{padding:100px 20px 0}
+  .hero-info{grid-template-columns:1fr}
+  .about-strip{grid-template-columns:1fr;padding:64px 20px;gap:40px}
+  .strip-right{grid-template-columns:1fr 1fr}
+  .menu-section,.exp-section{padding:80px 20px}
+  .exp-grid{grid-template-columns:1fr}
+  .res-section{grid-template-columns:1fr;padding:80px 20px;gap:48px}
+  .form-row{grid-template-columns:1fr}
+  .res-form{padding:28px 20px}
+  footer{padding:36px 20px}
+  .footer-top{flex-direction:column;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+
+<!-- HERO BACKGROUND IMAGES -->
+<div class="hero-bg" id="hero-bg">
+  <div class="hero-bg-img active" style="background-image:url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1920&q=85');filter:brightness(0.28) saturate(1.2)"></div>
+  <div class="hero-bg-img" style="background-image:url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1920&q=85');filter:brightness(0.25) saturate(1.1)"></div>
+  <div class="hero-bg-img" style="background-image:url('https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1920&q=85');filter:brightness(0.28) saturate(1.3)"></div>
+  <div class="hero-bg-img" style="background-image:url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1920&q=85');filter:brightness(0.22) saturate(1.1)"></div>
+  <div class="hero-bg-img" style="background-image:url('https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=1920&q=85');filter:brightness(0.26) saturate(1.2)"></div>
+  <div class="hero-bg-img" style="background-image:url('https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=1920&q=85');filter:brightness(0.28) saturate(1.2)"></div>
+</div>
+<div class="hero-bg-overlay"></div>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-logo">The <span>Table</span></div>
+  <ul class="nav-center">
+    <li><a href="#menu">Menu</a></li>
+    <li><a href="#about">Our Story</a></li>
+    <li><a href="#reservation">Reserve</a></li>
+    <li><a href="#reservation">Order Online</a></li>
+  </ul>
+  <div class="nav-right">
+    <span class="nav-hours">Open Daily 11AM – 10PM</span>
+    <a href="#reservation" class="nav-order">Reserve a Table</a>
+  </div>
+</nav>
+
+<div class="scroll-wrap">
+
+<!-- HERO -->
+<div class="hero" id="home">
+  <div class="hero-flag">
+    <div class="flag-line"></div>
+    <span class="flag-text">Authentic · Handmade · From the Heart</span>
+    <div class="flag-line"></div>
+  </div>
+  <h1 class="hero-title">
+    Where Every Meal
+    <em>Becomes a Memory</em>
+  </h1>
+  <p class="hero-tagline">From the first bite to the last sip — every dish is crafted with care, every ingredient chosen with intention, and every guest welcomed like they belong here.</p>
+  <div class="hero-ctas">
+    <a href="#reservation" class="cta-primary">Reserve a Table</a>
+    <a href="#menu" class="cta-secondary">View Our Menu</a>
+  </div>
+  <div class="hero-info">
+    <div class="info-item">
+      <div class="info-label">Location</div>
+      <div class="info-value">123 Main Street · Your City</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Hours</div>
+      <div class="info-value">Open Daily · 11AM to 10PM</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Reservations</div>
+      <div class="info-value">(000) 000-0000</div>
+    </div>
+  </div>
+</div>
+
+<!-- ABOUT STRIP -->
+<div class="about-strip" id="about">
+  <div class="strip-left reveal-left">
+    <p class="strip-eyebrow">Our Story</p>
+    <h2 class="strip-title">
+      Honest Food.<br>
+      Real Ingredients.<br>
+      <em>Real Memories.</em>
+    </h2>
+    <p class="strip-body">We started with one kitchen and one belief — that honest food made with care always finds its way to the right table. Every dish we serve carries that same intention from the very first day we opened our doors.</p>
+  </div>
+  <div class="strip-right reveal-right">
+    <div class="strip-stat">
+      <div class="ss-num">14+</div>
+      <div class="ss-label">Years Serving</div>
+    </div>
+    <div class="strip-stat">
+      <div class="ss-num">4.8★</div>
+      <div class="ss-label">Google Rating</div>
+    </div>
+    <div class="strip-stat">
+      <div class="ss-num">500+</div>
+      <div class="ss-label">5-Star Reviews</div>
+    </div>
+    <div class="strip-stat">
+      <div class="ss-num">100%</div>
+      <div class="ss-label">Fresh Daily</div>
+    </div>
+  </div>
+</div>
+
+<!-- MENU -->
+<div class="menu-section" id="menu">
+  <div class="menu-header">
+    <p class="menu-eyebrow reveal">What We Serve</p>
+    <h2 class="menu-title reveal">Made Fresh. <em>Every Single Day.</em></h2>
+    <p class="menu-sub reveal">Our menu changes with the seasons — but the love that goes into every plate never does.</p>
+  </div>
+  <div class="menu-tabs reveal">
+    <div class="menu-tab active">Starters</div>
+    <div class="menu-tab">Mains</div>
+    <div class="menu-tab">Specials</div>
+    <div class="menu-tab">Desserts</div>
+    <div class="menu-tab">Drinks</div>
+  </div>
+  <div class="menu-items reveal">
+    <div class="menu-item">
+      <div class="mi-info">
+        <div class="mi-name">Chef's Signature Starter</div>
+        <div class="mi-desc">Our most requested opening dish — crafted fresh daily with the finest seasonal ingredients and finished with the chef's own signature touch.</div>
+        <div class="mi-tags"><span class="mi-tag">House Favorite</span><span class="mi-tag">Changes Seasonally</span></div>
+      </div>
+      <div class="mi-price">$12.00</div>
+    </div>
+    <div class="menu-item">
+      <div class="mi-info">
+        <div class="mi-name">Shareable Starter Plate</div>
+        <div class="mi-desc">A generous spread of house-made bites perfect for the table — always fresh, always generous, always the first thing to disappear.</div>
+        <div class="mi-tags"><span class="mi-tag">Perfect for Sharing</span></div>
+      </div>
+      <div class="mi-price">$14.00</div>
+    </div>
+    <div class="menu-item">
+      <div class="mi-info">
+        <div class="mi-name">Slow-Cooked House Special</div>
+        <div class="mi-desc">Our most beloved main — slow prepared with ingredients sourced locally and finished the way only our kitchen knows how. A reason to come back.</div>
+        <div class="mi-tags"><span class="mi-tag">Best Seller</span></div>
+      </div>
+      <div class="mi-price">$18.00</div>
+    </div>
+    <div class="menu-item">
+      <div class="mi-info">
+        <div class="mi-name">Homemade Soup of the Day</div>
+        <div class="mi-desc">Made from scratch every morning with fresh ingredients. Ask your server what we're pouring today — it's always worth it.</div>
+        <div class="mi-tags"><span class="mi-tag">Homemade Daily</span></div>
+      </div>
+      <div class="mi-price">$9.00</div>
+    </div>
+    <div class="menu-item">
+      <div class="mi-info">
+        <div class="mi-name">Fresh Seasonal Side</div>
+        <div class="mi-desc">Whatever is at peak freshness this week — prepared simply and beautifully to complement any main on our menu.</div>
+        <div class="mi-tags"><span class="mi-tag">Changes Weekly</span><span class="mi-tag">Ask Your Server</span></div>
+      </div>
+      <div class="mi-price">$7.00</div>
+    </div>
+  </div>
+</div>
+
+<!-- EXPERIENCE -->
+<div class="exp-section">
+  <div class="exp-header">
+    <p class="exp-eyebrow reveal">More Than a Meal</p>
+    <h2 class="exp-title reveal">Everything You <em>Need From Us</em></h2>
+  </div>
+  <div class="exp-grid">
+    <div class="exp-card">
+      <span class="exp-icon">🍽️</span>
+      <div class="exp-name">Dine In</div>
+      <div class="exp-desc">Settle in and let us take care of you. A warm atmosphere, attentive service, and food that makes you stay just a little longer.</div>
+    </div>
+    <div class="exp-card">
+      <span class="exp-icon">📱</span>
+      <div class="exp-name">Order Online</div>
+      <div class="exp-desc">Can't make it in? Order ahead for pickup — your food is fresh and ready the moment you arrive. No waiting.</div>
+    </div>
+    <div class="exp-card">
+      <span class="exp-icon">🎉</span>
+      <div class="exp-name">Private Events</div>
+      <div class="exp-desc">Birthdays, celebrations, corporate lunches — we close off our space just for you and customize a menu around your group.</div>
+    </div>
+    <div class="exp-card">
+      <span class="exp-icon">🚗</span>
+      <div class="exp-name">Curbside Pickup</div>
+      <div class="exp-desc">Order online, pull up, and we bring it straight to your car. Fresh food without leaving your seat.</div>
+    </div>
+    <div class="exp-card">
+      <span class="exp-icon">⭐</span>
+      <div class="exp-name">Loyalty Rewards</div>
+      <div class="exp-desc">Every visit earns you points toward free meals and exclusive offers. Our way of saying thank you for coming back.</div>
+    </div>
+    <div class="exp-card">
+      <span class="exp-icon">🤖</span>
+      <div class="exp-name">24hr Reservations</div>
+      <div class="exp-desc">Our AI receptionist answers every call around the clock — book your table, ask about the menu, or place an order anytime.</div>
+    </div>
+  </div>
+</div>
+
+<!-- RESERVATION -->
+<div class="res-section" id="reservation">
+  <div class="res-left reveal-left">
+    <p class="res-eyebrow">Join Us Tonight</p>
+    <h2 class="res-title">Reserve Your <em>Table</em></h2>
+    <p class="res-body">We'd love to have you. Fill out the form and we'll confirm your reservation within the hour. Walk-ins always welcome — but a table is better.</p>
+    <div class="res-contact">
+      <div class="rc-item"><span class="rc-dot"></span>Open Daily — 11:00 AM to 10:00 PM</div>
+      <div class="rc-item"><span class="rc-dot"></span>Call us anytime — (000) 000-0000</div>
+      <div class="rc-item"><span class="rc-dot"></span>123 Main Street · Your City, CA</div>
+      <div class="rc-item"><span class="rc-dot"></span>Online ordering available 24 hours</div>
+    </div>
+  </div>
+  <div class="res-right reveal-right">
+    <div class="res-form">
+      <div class="form-row">
+        <div class="ifield"><label>First Name</label><input type="text" placeholder="John"></div>
+        <div class="ifield"><label>Last Name</label><input type="text" placeholder="Smith"></div>
+      </div>
+      <div class="form-row">
+        <div class="ifield"><label>Phone Number</label><input type="tel" placeholder="(000) 000-0000"></div>
+        <div class="ifield"><label>Email</label><input type="email" placeholder="john@email.com"></div>
+      </div>
+      <div class="form-row">
+        <div class="ifield">
+          <label>Party Size</label>
+          <select>
+            <option>1 to 2 guests</option>
+            <option>3 to 4 guests</option>
+            <option>5 to 6 guests</option>
+            <option>7 or more</option>
+          </select>
+        </div>
+        <div class="ifield">
+          <label>Preferred Time</label>
+          <select>
+            <option>11:00 AM</option>
+            <option>12:00 PM</option>
+            <option>1:00 PM</option>
+            <option>5:00 PM</option>
+            <option>6:00 PM</option>
+            <option>7:00 PM</option>
+            <option>8:00 PM</option>
+          </select>
+        </div>
+      </div>
+      <div class="ifield"><label>Preferred Date</label><input type="text" placeholder="e.g. Tonight, Saturday, July 4th"></div>
+      <div class="ifield"><label>Special Requests</label><input type="text" placeholder="Allergies, celebrations, high chair needed..."></div>
+      <button class="res-btn">Request My Reservation</button>
+      <p class="res-note">We confirm within 1 hour. Walk-ins always welcome too.</p>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<footer>
+  <div class="footer-top">
+    <div class="footer-logo">The <span>Table</span></div>
+    <div class="footer-links">
+      <a href="#menu">Menu</a>
+      <a href="#about">Our Story</a>
+      <a href="#reservation">Reserve</a>
+      <a href="#reservation">Order Online</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2025 The Table Restaurant · Built by Nexora</div>
+    <div class="footer-tagline">"Where Every Table Tells a Story"</div>
+  </div>
+</footer>
+
+<script>
+// BG CROSSFADE
+const bgImgs=document.querySelectorAll('.hero-bg-img');
+let curBg=0;
+function switchBg(idx){
+  bgImgs[curBg].classList.remove('active');
+  curBg=idx;
+  bgImgs[curBg].classList.add('active');
+}
+setInterval(()=>switchBg((curBg+1)%bgImgs.length),5000);
+
+// MENU TABS
+document.querySelectorAll('.menu-tab').forEach(tab=>{
+  tab.addEventListener('click',function(){
+    document.querySelectorAll('.menu-tab').forEach(t=>t.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// NAV
+const nav=document.getElementById('nav');
+window.addEventListener('scroll',()=>nav.classList.toggle('solid',window.scrollY>80));
+
+// REVEAL
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('show');obs.unobserve(e.target)}});
+},{threshold:0.08});
+document.querySelectorAll('.reveal,.reveal-left,.reveal-right,.exp-card').forEach(el=>obs.observe(el));
+document.querySelectorAll('.exp-card').forEach((c,i)=>{c.style.transitionDelay=`${i*80}ms`});
+</script>
+</body>
+</html>
